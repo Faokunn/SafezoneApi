@@ -3,13 +3,13 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from typing import Annotated
 from fastapi import Depends
+
 from models import user_model,profile_model,contacts_model,safezone_model,dangerzone_model,incidentreport_model,sosalerts_model,circle_model
 
 URL_DATABASE = 'postgresql+asyncpg://postgres:admin123!@localhost:5432/safezone'
 
 engine = create_async_engine(URL_DATABASE, echo=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
 
 async def create_tables():
     async with engine.begin() as conn:
