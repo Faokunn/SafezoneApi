@@ -1,10 +1,9 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
 from typing import Annotated
 from fastapi import Depends
 
-from models import user_model,profile_model,contacts_model,safezone_model,dangerzone_model,incidentreport_model,sosalerts_model,circle_model
+from models import user_model,profile_model,contacts_model,safezone_model,dangerzone_model,incidentreport_model,sosalerts_model,circle_model,notifications
 
 URL_DATABASE = 'postgresql+asyncpg://postgres:admin123!@localhost:5432/safezone'
 
@@ -21,6 +20,7 @@ async def create_tables():
         await conn.run_sync(incidentreport_model.Base.metadata.create_all)
         await conn.run_sync(sosalerts_model.Base.metadata.create_all)
         await conn.run_sync(circle_model.Base.metadata.create_all)
+        await conn.run_sync(notifications.Base.metadata.create_all)
 
 async_session = sessionmaker(
     engine, expire_on_commit=False, class_=AsyncSession
