@@ -2,10 +2,14 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 from typing import Annotated
 from fastapi import Depends
+import os
+from dotenv import load_dotenv
 
 from models import user_model,profile_model,contacts_model,safezone_model,dangerzone_model,incidentreport_model,sosalerts_model,circle_model,notifications
 
-URL_DATABASE = 'postgresql+asyncpg://postgres:admin123!@localhost:5432/safezone'
+# URL_DATABASE = 'postgresql+asyncpg://postgres:admin123!@localhost:5432/safezone'
+load_dotenv()
+URL_DATABASE = os.getenv("DATABASE_URL")
 
 engine = create_async_engine(URL_DATABASE, echo=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

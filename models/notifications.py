@@ -1,9 +1,9 @@
-from sqlalchemy import Column, Integer, String, Boolean, Float, ForeignKey, Text, DateTime, Time
+from sqlalchemy import Column, Integer, String, Boolean, Float, ForeignKey, Text, DateTime
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from database.base import Base
 
-class Nofitication(Base):
+class Notification(Base):
     __tablename__ = 'notifications'
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
@@ -13,5 +13,6 @@ class Nofitication(Base):
     created_at = Column(DateTime, default=datetime.now())
     updated_at = Column(DateTime, default=datetime.now(), onupdate=datetime.now())
     type = Column(String(80), nullable=False)
-    
+
     user = relationship("User", back_populates="notifications")
+    
