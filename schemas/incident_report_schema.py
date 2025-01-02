@@ -16,6 +16,7 @@ class IncidentReportModel(BaseModel):
 
     class Config:
         orm_mode = True
+        from_attributes=True
 
 class IncidentReportBase(BaseModel):
     incident_report: IncidentReportModel
@@ -23,6 +24,7 @@ class IncidentReportBase(BaseModel):
 
     class Config:
         orm_mode = True
+        from_attributes=True
 
 class IncidentReportRequestModel(BaseModel):
     danger_zone_id: int

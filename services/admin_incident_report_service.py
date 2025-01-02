@@ -147,4 +147,3 @@ async def under_review_incident_report_service(db, incident_id: int):
         await db.rollback()
         raise HTTPException(status_code=500, detail=f"Error verifying incident report: {str(e)}")
     
-## TODO: get incident report by id 
