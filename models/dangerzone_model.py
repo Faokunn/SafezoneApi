@@ -6,7 +6,7 @@ from database.base import Base
 class DangerZone(Base):
     __tablename__ = 'danger_zones'
     id = Column(Integer, primary_key=True)
-    is_verified = Column(Boolean, default=False)
+    is_verified = Column(Boolean, default=False, nullable=False)
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
     radius = Column(Float, nullable=False)
