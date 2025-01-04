@@ -5,6 +5,7 @@ from datetime import datetime, date, time
 
 class IncidentReportModel(BaseModel):
     id: int
+    user_id: int
     danger_zone_id: int
     description: str
     report_date: date
@@ -15,7 +16,6 @@ class IncidentReportModel(BaseModel):
     updated_at: datetime
 
     class Config:
-        orm_mode = True
         from_attributes=True
 
 class IncidentReportBase(BaseModel):
@@ -23,10 +23,11 @@ class IncidentReportBase(BaseModel):
     danger_zone: danger_zone_schema.DangerZoneModel
 
     class Config:
-        orm_mode = True
+        from_orm=True
         from_attributes=True
 
 class IncidentReportRequestModel(BaseModel):
+    user_id: int
     danger_zone_id: int
     description: str
     report_date: date
@@ -41,4 +42,4 @@ class IncidentReportRequestModel(BaseModel):
     name: str
 
     class Config:
-        orm_mode = True
+        from_orm=True

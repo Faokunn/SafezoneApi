@@ -10,6 +10,7 @@ class IncidentReport(Base):
     __tablename__ = 'incident_reports'
     id = Column(Integer, primary_key=True)
     danger_zone_id = Column(Integer, ForeignKey('danger_zones.id'), nullable=False)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     description = Column(Text, nullable=False)
     report_date = Column(Date, nullable=False)
     report_time = Column(Time, nullable=False)
@@ -19,3 +20,4 @@ class IncidentReport(Base):
     updated_at = Column(TIMESTAMP(timezone=True), nullable=False)
 
     danger_zone = relationship("DangerZone", back_populates="incident_reports")
+    user = relationship("User", back_populates="incident_reports")

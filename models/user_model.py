@@ -15,6 +15,7 @@ class User(Base):
     sos_alerts = relationship("SOSAlerter", back_populates="user", cascade="all, delete-orphan")
     circle = relationship("Circle", back_populates="user", uselist=False, cascade="all, delete-orphan")
     profile = relationship("Profile", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    incident_reports = relationship("IncidentReport", back_populates="user", cascade="all, delete-orphan")
 
     def as_dict(self):
         return {
