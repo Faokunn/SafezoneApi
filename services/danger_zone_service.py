@@ -1,7 +1,3 @@
-## TODO
-## get danger zone by id
-## get all verified danger zones
-
 from sqlalchemy.orm import selectinload
 from sqlalchemy.future import select
 from models.dangerzone_model import DangerZone
@@ -32,3 +28,5 @@ async def get_all_danger_zones_service(db):
         ]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving danger zones: {str(e)}")
+    
+## get all verified danger zones
