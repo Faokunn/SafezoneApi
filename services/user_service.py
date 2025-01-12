@@ -60,6 +60,8 @@ async def create_user(user: user_model.User, profile: profile_model.Profile, db)
         new_profile = profile_model.Profile(
             user_id=new_user.id,
             address=profile.address,
+            first_name=profile.first_name,
+            last_name=profile.last_name,
             is_admin=profile.is_admin,
             is_girl=profile.is_girl,
             is_verified=profile.is_verified,
@@ -76,6 +78,8 @@ async def create_user(user: user_model.User, profile: profile_model.Profile, db)
             ),
             "profile": ProfileModel(
                 address=new_profile.address,
+                first_name=profile.first_name,
+                last_name=profile.last_name,
                 is_admin=new_profile.is_admin,
                 is_girl=new_profile.is_girl,
                 is_verified=new_profile.is_verified,

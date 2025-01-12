@@ -6,6 +6,8 @@ from database.base import Base
 class Profile(Base):
     __tablename__ = 'Profile'
     id = Column(Integer, primary_key=True)
+    first_name = Column(String(80), nullable=False)
+    last_name = Column(String(80), nullable=False)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     address = Column(String(80), nullable=False)
     is_admin = Column(Boolean, default=False)
