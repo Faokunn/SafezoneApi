@@ -14,7 +14,8 @@ from services.incident_report_service import (
     get_incident_report_by_id_service,
     get_incident_report_by_danger_zone_id_service,
     get_incident_report_by_status_service,
-    get_incident_report_by_user_id_service
+    get_incident_report_by_user_id_service,
+    get_status_history_service
 )
 
 load_dotenv()
@@ -62,6 +63,21 @@ async def get_incident_report_by_user_id(user_id: int, db: db_dependency):
     if not incident:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Incident reports not found")
     return incident
+
+@router.get("/incident-reports/{incident_id}/status-history")
+async def get_incident_status_history(incident_id: int, db: db_dependency):
+    try:
+        status_history = await get_status_history_service(db, incident_id)
+        
+        if not status_history:
+            raise HTTPException(status_code=404, detail="No status history found for the incident report.")
+        
+        return {
+            "incident_id": incident_id,
+            "status_updates": status_history
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 ## POST ROUTES
 

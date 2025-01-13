@@ -1,5 +1,6 @@
 from sqlalchemy.orm import selectinload
 from sqlalchemy.future import select
+from models.incident_report_status_history import IncidentReportStatusHistory
 from models.incidentreport_model import IncidentReport
 from models.dangerzone_model import DangerZone
 from models.user_model import User
@@ -367,3 +368,17 @@ async def get_incident_report_by_user_id_service(user_id: int, db):
 
     except Exception as e:
         await handle_exception(e)
+
+async def get_status_history_service(db, incident_id: int):
+    result = await db.execute(
+        select(IncidentReportStatusHistory).filter_by(incident_report_id=incident_id).order_by(IncidentReportStatusHistory.timestamp)
+    )
+    status_history = result.scalars().all()
+    return [
+        {
+            "status": entry.status,
+            "timestamp": entry.timestamp.isoformat(),
+            "remarks": entry.remarks,
+        }
+        for entry in status_history
+    ]

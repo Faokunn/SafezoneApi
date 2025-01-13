@@ -29,4 +29,3 @@ async def get_all_danger_zones_service(db):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving danger zones: {str(e)}")
     
-## get all verified danger zones

@@ -1,9 +1,19 @@
 from sqlalchemy.future import select
 from models.incidentreport_model import IncidentReport
+from models.incident_report_status_history import IncidentReportStatusHistory
 from models.dangerzone_model import DangerZone
 from fastapi import HTTPException
 from datetime import datetime
 from zoneinfo import ZoneInfo
+
+async def add_status_history(db, incident_report_id: int, status: str, remarks: str = None):
+    status_history = IncidentReportStatusHistory(
+        incident_report_id=incident_report_id,
+        status=status,
+        timestamp=datetime.now(ZoneInfo("Asia/Manila")),
+        remarks=remarks,
+    )
+    db.add(status_history)
 
 async def verify_incident_report_service(db, incident_id: int):
     try:
@@ -16,6 +26,8 @@ async def verify_incident_report_service(db, incident_id: int):
         incident_report.status = "verified"
         incident_report.updated_at = datetime.now(ZoneInfo("Asia/Manila"))
         db.add(incident_report)
+
+        await add_status_history(db, incident_report_id=incident_id, status="verified", remarks="Incident report verified.")
 
         danger_zone_data = None
         if incident_report.danger_zone_id:
@@ -66,6 +78,8 @@ async def reject_incident_report_service(db, incident_id: int):
         incident_report.updated_at = datetime.now(ZoneInfo("Asia/Manila"))
         db.add(incident_report)
 
+        await add_status_history(db, incident_report_id=incident_id, status="rejected", remarks="Incident report rejected.")
+
         danger_zone_data = None
         if incident_report.danger_zone_id:
             result = await db.execute(select(DangerZone).filter_by(id=incident_report.danger_zone_id))
@@ -111,6 +125,8 @@ async def under_review_incident_report_service(db, incident_id: int):
         incident_report.status = "under review"
         incident_report.updated_at = datetime.now(ZoneInfo("Asia/Manila"))
         db.add(incident_report)
+
+        await add_status_history(db, incident_report_id=incident_id, status="under review", remarks="Incident report is under review.")
 
         danger_zone_data = None
         if incident_report.danger_zone_id:

@@ -21,3 +21,4 @@ class IncidentReport(Base):
 
     danger_zone = relationship("DangerZone", back_populates="incident_reports")
     user = relationship("User", back_populates="incident_reports")
+    status_history = relationship("IncidentReportStatusHistory", back_populates="incident_report", cascade="all, delete-orphan")
