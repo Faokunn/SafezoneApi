@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 from models import user_model,profile_model,contacts_model,safezone_model,dangerzone_model,incidentreport_model,sosalerts_model,circle_model,notifications
 
-# URL_DATABASE = 'postgresql+asyncpg://postgres:admin123!@localhost:5432/safezone'
+#URL_DATABASE = 'postgresql+asyncpg://postgres:admin123!@localhost:5432/safezone'
 load_dotenv()
 URL_DATABASE = os.getenv("DATABASE_URL")
 

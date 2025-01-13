@@ -8,16 +8,18 @@ import bcrypt
 from database.db_setup import db_dependency
 from models.profile_model import Profile
 from models.user_model import User
+from fastapi import HTTPException, status
+from fastapi.responses import JSONResponse
 
 router = APIRouter()
 @router.get("/users/")
 async def get_users(db: db_dependency):
     users = await get_all_users(db)
+    print(f"Users: {users}")  # Debugging line to check users list
     
     response = []
     for user in users:
-        user_profile = await get_profile_by_user_id(db,user.id)
-
+        user_profile = await get_profile_by_user_id(db, user.id)
         if user_profile:
             response.append({
                 "user": UserModel(
@@ -27,13 +29,16 @@ async def get_users(db: db_dependency):
                 ),
                 "profile": ProfileModel(
                     address=user_profile.address,
+                    first_name=user_profile.first_name.upper(),
+                    last_name=user_profile.last_name.upper(),
                     is_admin=user_profile.is_admin,
                     is_girl=user_profile.is_girl,
                     is_verified=user_profile.is_verified,
                 )
             })
-
+    
     return response
+
 
 @router.post("/create-account/", response_model=UserProfileResponse)
 async def create_usert(user: UserModel, profile: ProfileModel, db: db_dependency):
@@ -48,13 +53,18 @@ async def login(user: LoginRequest, db: db_dependency):
     
     user_profile = await get_profile_by_user_id(db,user_obj.id)
 
-    return LoginResponse(
-        username=user_in_db.username,
-        email=user_in_db.email,
-        profile={
-            "address": user_profile.address,
-            "is_admin": user_profile.is_admin,
-            "is_girl": user_profile.is_girl,
-            "is_verified": user_profile.is_verified,
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            "username": user_in_db.username,
+            "email": user_in_db.email,
+            "profile": {
+                "address": user_profile.address,
+                "first_name": user_profile.first_name.upper(),
+                "last_name": user_profile.last_name.upper(),
+                "is_admin": user_profile.is_admin,
+                "is_girl": user_profile.is_girl,
+                "is_verified": user_profile.is_verified,
+            }
         }
     )
