@@ -11,7 +11,7 @@ class User(Base):
     password = Column(String(128), nullable=False)
 
     notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
-    contacts = relationship("Contacts", back_populates="user", cascade="all, delete-orphan")
+    contacts = relationship("ContactModel", back_populates="user", cascade="all, delete-orphan")
     sos_alerts = relationship("SOSAlerter", back_populates="user", cascade="all, delete-orphan")
     circle = relationship("Circle", back_populates="user", uselist=False, cascade="all, delete-orphan")
     profile = relationship("Profile", back_populates="user", uselist=False, cascade="all, delete-orphan")
