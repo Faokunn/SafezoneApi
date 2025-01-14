@@ -75,21 +75,20 @@ async def create_user(user: user_model.User, profile: profile_model.Profile, db)
         await db.commit()
         await db.refresh(new_profile)
 
-        # Create default contacts (no need for user input)
         default_contacts = [
             contacts_model.ContactModel(
                 user_id=new_user.id,
-                phone_number=117,
+                phone_number="117",
                 name="Philippine National Police (PNP)",
             ),
             contacts_model.ContactModel(
                 user_id=new_user.id,
-                phone_number=911, 
+                phone_number="911", 
                 name="Ambulance",
             ),
             contacts_model.ContactModel(
                 user_id=new_user.id,
-                phone_number=160, 
+                phone_number="160", 
                 name="Firefighter",
             )
         ]

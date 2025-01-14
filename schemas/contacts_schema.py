@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 
 class ContactSchema(BaseModel):
-    phone_number: int
+    phone_number: str
     name: str
 
     class Config:

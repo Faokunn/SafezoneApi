@@ -15,13 +15,23 @@ async def update_contact(db, id, contact: ContactModel):
         return contact_to_update
     return None
 
-async def delete_contact(db, id):
+async def delete_contact(db, id: int):
     contact_to_delete = await db.get(ContactModel, id)
     if contact_to_delete:
-        db.delete(contact_to_delete)
-        await db.commit()
-        return True
-    return False
+        print(f"Found contact: {contact_to_delete.name}, ID: {contact_to_delete.id}")
+        
+        try:
+            await db.delete(contact_to_delete)
+            await db.commit()
+            print(f"Successfully deleted contact with ID {id}")
+            return True
+        except Exception as e:
+            print(f"Error during commit: {e}")
+            await db.rollback()  # Rollback if an error occurs
+            return False
+    else:
+        print(f"Contact with ID {id} not found.")
+        return False
 
 async def get_all_user_contacts(db, user_id):
     result = await db.execute(select(ContactModel).filter(ContactModel.user_id == user_id))

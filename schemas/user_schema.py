@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from schemas import profile_schema
 
 class UserModel(BaseModel):
+    id: int
     username: str
     email: str
     password: str
