@@ -61,7 +61,6 @@ async def create_user(user: user_model.User, profile: profile_model.Profile, db)
         await db.commit()
         await db.refresh(new_user)
 
-        # Create the new profile
         new_profile = profile_model.Profile(
             user_id=new_user.id,
             address=profile.address,
