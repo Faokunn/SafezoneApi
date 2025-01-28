@@ -95,25 +95,40 @@ async def get_all_circles(db: AsyncSession):
         raise Exception(f"Error fetching all circles: {str(e)}")
 
 async def remove_member_from_circle(db: AsyncSession, circle_id: int, user_id: int):
-    """Remove a user from a circle asynchronously"""
+    """Remove a user from a circle asynchronously."""
     try:
-        circle = await db.get(Circle, circle_id)
-        user = await db.get(User, user_id)
+        # Check if the circle exists
+        circle_stmt = select(Circle).where(Circle.id == circle_id)
+        result = await db.execute(circle_stmt)
+        circle = result.scalars().first()
 
-        if not circle or not user:
-            raise Exception("Circle or user not found.")
+        if not circle:
+            raise Exception("Circle not found.")
 
-        if user in circle.members:
-            circle.members.remove(user)
-            await db.commit()
-            await db.refresh(circle)
-            return circle
-        else:
-            raise Exception("User is not a member of the circle.")
-    
+        # Check if the user exists
+        user_stmt = select(User).where(User.id == user_id)
+        result = await db.execute(user_stmt)
+        user = result.scalars().first()
+
+        if not user:
+            raise Exception("User not found.")
+
+        # Delete the relationship manually from the association table
+        delete_stmt = (
+            group_members.delete()
+            .where(group_members.c.circle_id == circle_id, group_members.c.user_id == user_id)
+        )
+        await db.execute(delete_stmt)
+        await db.commit()
+
+        # Refresh the circle after modification
+        await db.refresh(circle)
+        return circle
+
     except SQLAlchemyError as e:
         await db.rollback()  # Rollback in case of error
         raise Exception(f"Error removing member from circle: {str(e)}")
+
 
 async def delete_circle(db: AsyncSession, circle_id: int):
     """Delete a circle by its ID"""

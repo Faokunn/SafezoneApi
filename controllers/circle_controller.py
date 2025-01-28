@@ -71,6 +71,7 @@ async def remove_member_from_circle_route(circle_id: int, user_id: int, db: db_d
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
+
 # Route to delete a circle
 @router.delete("/delete-circle/")
 async def delete_circle_route(circle_id: int, db: db_dependency):
