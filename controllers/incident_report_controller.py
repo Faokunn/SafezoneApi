@@ -1,120 +1,45 @@
-from fastapi import APIRouter, HTTPException, status, UploadFile, File, FastAPI
-from dotenv import load_dotenv
+from fastapi import APIRouter, HTTPException, status, UploadFile, File
 import os
-from firebase_admin import credentials, initialize_app, storage
-from datetime import timedelta
+import json
+import firebase_admin
+from firebase_admin import credentials, storage
+from dotenv import load_dotenv
 from typing import List, Optional
-from schemas.incident_report_schema import IncidentReportModel, IncidentReportBase, IncidentReportRequestModel
-from database.db_setup import db_dependency
-from services.incident_report_service import (
-    get_all_incidents,
-    create_incident_report_service,
-    update_incident_report_service,
-    delete_incident_report_service,
-    get_incident_report_by_id_service,
-    get_incident_report_by_danger_zone_id_service,
-    get_incident_report_by_status_service,
-    get_incident_report_by_user_id_service,
-    get_status_history_service
-)
 
-load_dotenv()
+load_dotenv()  # Make sure you have .env to load the environment variables
 
-cred_path = os.getenv('FIREBASE_CREDENTIALS_PATH')
-storage_bucket = os.getenv('FIREBASE_STORAGE_BUCKET')
+# Load Firebase credentials from the environment variable
+firebase_credentials_json = os.getenv('FIREBASE_CREDENTIALS_JSON')
+if firebase_credentials_json is None:
+    raise ValueError("Firebase credentials not found in environment variables")
 
-cred = credentials.Certificate(cred_path)
-firebase_app = initialize_app(cred, {
-    'storageBucket': storage_bucket
+# Parse the JSON string to a Python dictionary
+cred_dict = json.loads(firebase_credentials_json)
+
+# Initialize Firebase with the credentials
+cred = credentials.Certificate(cred_dict)
+firebase_app = firebase_admin.initialize_app(cred, {
+    'storageBucket': os.getenv('FIREBASE_STORAGE_BUCKET')
 })
 
 router = APIRouter()
 
-## GET ROUTES
-
-@router.get("/incident-reports/", response_model=List[IncidentReportBase])
-async def get_incident_reports(db: db_dependency):
-    return await get_all_incidents(db)
-
-@router.get("/get-incident-report/{incident_id}", response_model=IncidentReportModel)
-async def get_incident_report(incident_id: int, db: db_dependency):
-    incident = await get_incident_report_by_id_service(incident_id, db)
-    if not incident:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Incident report not found")
-    return incident
-
-@router.get("/get-incident-reports/{danger_zone_id}")
-async def get_incident_report_by_danger_zone_id(danger_zone_id: int, db: db_dependency):
-    incident = await get_incident_report_by_danger_zone_id_service(danger_zone_id, db)
-    if not incident:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Incident reports not found")
-    return incident
-
-@router.get("/get-incident-reports-status/{status}")
-async def get_incident_report_by_status(status: str, db: db_dependency):
-    incident = await get_incident_report_by_status_service(status, db)
-    if not incident:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Incident reports not found")
-    return incident
-
-@router.get("/get-incident-reports-user/{user_id}")
-async def get_incident_report_by_user_id(user_id: int, db: db_dependency):
-    incident = await get_incident_report_by_user_id_service(user_id, db)
-    if not incident:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Incident reports not found")
-    return incident
-
-@router.get("/incident-reports/{incident_id}/status-history")
-async def get_incident_status_history(incident_id: int, db: db_dependency):
-    try:
-        status_history = await get_status_history_service(db, incident_id)
-        
-        if not status_history:
-            raise HTTPException(status_code=404, detail="No status history found for the incident report.")
-        
-        return {
-            "incident_id": incident_id,
-            "status_updates": status_history
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-## POST ROUTES
-
-@router.post("/create-incident-report/")
-async def create_incident_report(request_data: IncidentReportRequestModel, db: db_dependency):
-    return await create_incident_report_service(request_data, db)
-
-## PUT ROUTES
-
-@router.put("/update-incident-report/{incident_id}")
-async def update_incident_report(incident_id: int, request_data: IncidentReportRequestModel, db: db_dependency):
-    updated_report = await update_incident_report_service(incident_id, request_data, db)
-    if not updated_report:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Incident report not found for update")
-    return updated_report
-
-## DELETE ROUTES
-
-@router.delete("/delete-incident-report/{incident_id}")
-async def delete_incident_report(incident_id: int, db: db_dependency):
-    result = await delete_incident_report_service(incident_id, db)
-    if not result:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Incident report not found for deletion")
-    return result
-
-## TEST ROUTES
-
+# POST ROUTE for uploading a file to Firebase Storage
 @router.post("/upload")
 async def create_upload_file(file: UploadFile = File(...), path: Optional[str] = None):
+    # Ensure the file is an image
     if not file.filename.endswith((".jpg", ".jpeg", ".png")):
         raise HTTPException(status_code=400, detail="File must be an image")
+    
+    # Set the path for the file, default to the filename if not provided
     if not path:
         path = file.filename
+    
+    # Get the Firebase storage bucket and upload the file
     bucket = storage.bucket()
     blob = bucket.blob(path)
     blob.upload_from_string(await file.read(), content_type=file.content_type)
 
-
+    # Generate the public URL for the uploaded file
     url = blob.public_url
     return {"url": url}
