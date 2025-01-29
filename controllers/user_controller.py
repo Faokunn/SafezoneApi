@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from schemas.user_schema import UserModel, UserProfileResponse, LoginResponse, LoginRequest
 from schemas.profile_schema import ProfileModel
+from schemas.contacts_schema import ContactSchema
 from services.user_service import get_user_by_email, get_all_users,create_user,login_user
 from services.profile_service import get_profile_by_user_id
 import bcrypt
@@ -23,6 +24,7 @@ async def get_users(db: db_dependency):
         if user_profile:
             response.append({
                 "user": UserModel(
+                    id=user.id,
                     username=user.username,
                     email=user.email,
                     password="*****",
@@ -42,7 +44,10 @@ async def get_users(db: db_dependency):
 
 @router.post("/create-account/", response_model=UserProfileResponse)
 async def create_usert(user: UserModel, profile: ProfileModel, db: db_dependency):
-    return await create_user(user, profile, db)
+    try:
+        return await create_user(user, profile, db)
+    except HTTPException as e:
+        raise e
 
 @router.post("/login/", response_model=LoginResponse)
 async def login(user: LoginRequest, db: db_dependency):
@@ -56,6 +61,7 @@ async def login(user: LoginRequest, db: db_dependency):
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content={
+            'user_id': user_obj.id,
             "username": user_in_db.username,
             "email": user_in_db.email,
             "profile": {

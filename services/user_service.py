@@ -1,10 +1,12 @@
 from sqlalchemy.future import select
-from models import user_model, profile_model
+from models import user_model, profile_model, contacts_model
 from fastapi import HTTPException, status
 import bcrypt
 from schemas.user_schema import UserModel, UserProfileResponse
 from schemas.profile_schema import ProfileModel
+from schemas.contacts_schema import ContactSchema
 from sqlalchemy.exc import IntegrityError
+from typing import List, Optional
 
 def get_password_hash(password: str) -> str:
     salt = bcrypt.gensalt()
@@ -38,6 +40,7 @@ async def login_user(db, email, password):
     )
 
 async def create_user(user: user_model.User, profile: profile_model.Profile, db):
+    # Check if the user already exists by email
     existing_user = await get_user_by_email(db, user.email)
     if existing_user:
         raise HTTPException(
@@ -48,6 +51,7 @@ async def create_user(user: user_model.User, profile: profile_model.Profile, db)
     try:
         hashed_password = get_password_hash(user.password)
 
+        # Create the new user
         new_user = user_model.User(
             username=user.username,
             email=user.email,
@@ -70,21 +74,50 @@ async def create_user(user: user_model.User, profile: profile_model.Profile, db)
         await db.commit()
         await db.refresh(new_profile)
 
+        default_contacts = [
+            contacts_model.ContactModel(
+                user_id=new_user.id,
+                phone_number="117",
+                name="Philippine National Police (PNP)",
+            ),
+            contacts_model.ContactModel(
+                user_id=new_user.id,
+                phone_number="911", 
+                name="Ambulance",
+            ),
+            contacts_model.ContactModel(
+                user_id=new_user.id,
+                phone_number="160", 
+                name="Firefighter",
+            )
+        ]
+
+        # Add the default contacts to the DB
+        db.add_all(default_contacts)
+        await db.commit()
+
         return {
-            "user": UserModel(
+            "user": user_model.User(
                 username=new_user.username,
                 email=new_user.email,
-                password="*****",
+                password="*****",  # Don't return the password for security
             ),
-            "profile": ProfileModel(
+            "profile": profile_model.Profile(
                 address=new_profile.address,
-                first_name=profile.first_name,
-                last_name=profile.last_name,
+                first_name=new_profile.first_name,
+                last_name=new_profile.last_name,
                 is_admin=new_profile.is_admin,
                 is_girl=new_profile.is_girl,
                 is_verified=new_profile.is_verified,
-            )
+            ),
+            "contacts": [
+                contacts_model.ContactModel(
+                    phone_number=contact.phone_number,
+                    name=contact.name,
+                ) for contact in default_contacts
+            ],
         }
+
     except IntegrityError:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
