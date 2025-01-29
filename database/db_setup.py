@@ -21,15 +21,16 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 engine = create_async_engine(
     DATABASE_URL,
     echo=True,
-    pool_recycle=300,  # Recycle connections every 5 minutes to avoid stale connections
-    pool_pre_ping=True  # Ensure connection is active before using it
+    poolclass=None  # Disable SQLAlchemy connection pooling (Pgbouncer handles it)
 )
 
 # ✅ Create an async session factory
 async_session = sessionmaker(
     bind=engine,
+    class_=AsyncSession,
     expire_on_commit=False,
-    class_=AsyncSession
+    autoflush=False,  # Prevent auto-flushing issues
+    autocommit=True  # ✅ Required for Pgbouncer in Transaction Mode
 )
 
 # ✅ Dependency for database session
@@ -68,4 +69,7 @@ async def startup():
 @app.on_event("shutdown")
 async def shutdown():
     print("Shutting down... Closing database connection.")
-    await engine.dispose()
+    try:
+        await engine.dispose()
+    except Exception as e:
+        print(f"Error closing database connection: {e}")
