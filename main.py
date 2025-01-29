@@ -9,6 +9,13 @@ from controllers.circle_controller import router as circle_router
 
 app = FastAPI()
 app.add_event_handler("startup", create_tables)
+@app.on_event("shutdown")
+async def shutdown():
+    print("Shutting down... Closing database connection.")
+    try:
+        await engine.dispose()
+    except Exception as e:
+        print(f"Error closing database connection: {e}")
 
 app.include_router(user_router, prefix="/users", tags=["Users"])
 app.include_router(contacts_router, prefix="/contacts", tags=["Contacts"])
