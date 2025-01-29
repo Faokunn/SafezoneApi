@@ -5,30 +5,41 @@ from fastapi import Depends
 import os
 from dotenv import load_dotenv
 
-from models import user_model,profile_model,contacts_model,safezone_model,dangerzone_model,incidentreport_model,sosalerts_model,circle_model,notifications
+from models import (
+    user_model, profile_model, contacts_model, safezone_model, 
+    dangerzone_model, incidentreport_model, sosalerts_model, 
+    circle_model, notifications
+)
 
-#URL_DATABASE = 'postgresql+asyncpg://postgres:admin123!@localhost:5432/safezone'
 load_dotenv()
 
 # Get the database URL from the environment variable
 URL_DATABASE = os.getenv("DATABASE_URL")
 
-# Create an async engine with the database URL
-engine = create_async_engine(URL_DATABASE, echo=True)
+# ✅ Create an async engine with connection management fixes
+engine = create_async_engine(
+    URL_DATABASE,
+    echo=True,
+    pool_recycle=300,  # Recycle connections every 5 minutes
+    pool_pre_ping=True  # Check connection before using
+)
 
-# Use sessionmaker for AsyncSession
+# ✅ Use sessionmaker for AsyncSession
 async_session = sessionmaker(
     engine, expire_on_commit=False, class_=AsyncSession
 )
 
-# Dependency for FastAPI to get the database session
+# ✅ Dependency for FastAPI to get the database session
 async def get_db() -> AsyncSession:
     async with async_session() as session:
-        yield session
+        try:
+            yield session
+        finally:
+            await session.close()  # Ensure session is closed
 
 db_dependency = Annotated[AsyncSession, Depends(get_db)]
 
-# Function to create tables asynchronously
+# ✅ Function to create tables asynchronously
 async def create_tables():
     """Create all tables in the database asynchronously."""
     async with engine.begin() as conn:
