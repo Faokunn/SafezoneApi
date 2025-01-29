@@ -10,9 +10,9 @@ from typing import List, Optional
 from fastapi.concurrency import run_in_threadpool
 from fastapi import HTTPException
 import logging
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession
 
-async def get_all_users(db):
+async def get_all_users(db: AsyncSession):
     try:
         result = await db.execute(select(user_model.User))
         return result.scalars().all()

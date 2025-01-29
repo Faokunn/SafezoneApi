@@ -7,29 +7,27 @@ from controllers.danger_zone_controller import router as danger_zone_router
 from controllers.contacts_controller import router as contacts_router
 from controllers.circle_controller import router as circle_router
 from database.db_setup import engine
-from fastapi import FastAPI
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from contextlib import asynccontextmanager
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # This will run during the startup phase
-    await create_tables()  # Make sure to run any setup functions like creating tables
+    # Ensure tables are created at startup
+    await create_tables()
     print("Starting up...")
 
-    # Yield control back to FastAPI
+    # Yield control to FastAPI
     yield
 
-    # This will run during the shutdown phase
+    # Handle shutdown
     print("Shutting down... Closing database connection.")
     try:
-        await engine.dispose()  # Close the database connection when shutting down
+        await engine.dispose()
     except Exception as e:
         print(f"Error closing database connection: {e}")
 
-# Create FastAPI app with the lifespan function
 app = FastAPI(lifespan=lifespan)
 
+# Include routers for various controllers
 app.include_router(user_router, prefix="/users", tags=["Users"])
 app.include_router(contacts_router, prefix="/contacts", tags=["Contacts"])
 app.include_router(incident_report_router, prefix="/incident-report", tags=["Incident Report"])
@@ -40,4 +38,3 @@ app.include_router(circle_router, prefix="/circle", tags=["Circle"])
 @app.get("/")
 async def root():
     return {"message": "Welcome to the SafeZone API"}
-

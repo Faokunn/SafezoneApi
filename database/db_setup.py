@@ -6,6 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from fastapi import FastAPI, Depends
 from typing import Annotated
 
+
 # Import your models
 from models import (
     user_model, profile_model, contacts_model, safezone_model,
