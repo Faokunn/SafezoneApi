@@ -12,7 +12,7 @@ from fastapi import HTTPException
 import logging
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 
-async def get_all_users(db: AsyncSession):
+async def get_all_users(db):
     try:
         result = await db.execute(select(user_model.User))
         return result.scalars().all()

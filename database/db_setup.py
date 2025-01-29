@@ -27,19 +27,22 @@ ssl_context.check_hostname = False  # Optional: Disable hostname verification if
 engine = create_async_engine(
     DATABASE_URL,
     echo=True,
-    connect_args={'ssl': ssl_context},  # Pass SSL context here
-    pool_recycle=300,  # Recycle connections every 5 minutes
-    pool_pre_ping=True  # Check connection before using it
+    connect_args={'ssl': ssl_context},
+    pool_size=10,  # Increase the pool size if necessary
+    max_overflow=20,  # Allow connections to temporarily exceed the pool size
+    pool_pre_ping=True,  # Check the health of connections before using them
+    pool_recycle=3600  # Recycle connections every hour if necessary
 )
 
 # Create the async session factory
 async_session = sessionmaker(
     bind=engine,
     class_=AsyncSession,
-    expire_on_commit=False
+    expire_on_commit=False,
+    autocommit=False,  # Make sure you're committing changes explicitly
 )
 
-# Dependency to get the database session in FastAPI routes
+
 async def get_db() -> AsyncSession:
     async with async_session() as session:
         try:
