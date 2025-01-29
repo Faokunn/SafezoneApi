@@ -10,6 +10,15 @@ from typing import List, Optional
 from fastapi.concurrency import run_in_threadpool
 from fastapi import HTTPException
 import logging
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+
+async def get_all_users(db: AsyncSession):
+    try:
+        result = await db.execute(select(user_model.User))
+        return result.scalars().all()
+    except Exception as e:
+        logging.error(f"Error fetching users: {e}")
+        raise HTTPException(status_code=500, detail="Error fetching users")
 
 async def get_password_hash(password: str) -> str:
     salt = bcrypt.gensalt()
@@ -23,13 +32,6 @@ async def get_user_by_email(db, email):
     result = await db.execute(select(user_model.User).filter(user_model.User.email == email))
     return result.scalars().first()
 
-async def get_all_users(db):
-    try:
-        result = await db.execute(select(user_model.User))
-        return result.scalars().all()
-    except Exception as e:
-        logging.error(f"Error fetching users: {e}")
-        raise HTTPException(status_code=500, detail="Error fetching users")
 
 async def login_user(db, email, password):
     user = await get_user_by_email(db, email)
