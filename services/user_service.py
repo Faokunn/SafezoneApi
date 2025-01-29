@@ -7,11 +7,15 @@ from schemas.profile_schema import ProfileModel
 from schemas.contacts_schema import ContactSchema
 from sqlalchemy.exc import IntegrityError
 from typing import List, Optional
+from fastapi.concurrency import run_in_threadpool
 
-def get_password_hash(password: str) -> str:
+async def get_password_hash(password: str) -> str:
     salt = bcrypt.gensalt()
-    hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
+    hashed_password = await run_in_threadpool(bcrypt.hashpw, password.encode('utf-8'), salt)
     return hashed_password.decode('utf-8')
+
+async def verify_password(plain_password, hashed_password) -> bool:
+    return await run_in_threadpool(bcrypt.checkpw, plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
 
 async def get_user_by_email(db, email):
     result = await db.execute(select(user_model.User).filter(user_model.User.email == email))
@@ -40,18 +44,9 @@ async def login_user(db, email, password):
     )
 
 async def create_user(user: user_model.User, profile: profile_model.Profile, db):
-    # Check if the user already exists by email
-    existing_user = await get_user_by_email(db, user.email)
-    if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
-        )
-
-    try:
+    # Create session for the user creation
+    async with db.begin():
         hashed_password = get_password_hash(user.password)
-
-        # Create the new user
         new_user = user_model.User(
             username=user.username,
             email=user.email,
@@ -61,7 +56,8 @@ async def create_user(user: user_model.User, profile: profile_model.Profile, db)
         await db.commit()
         await db.refresh(new_user)
 
-        # Create the new profile
+    # Create session for the profile creation
+    async with db.begin():
         new_profile = profile_model.Profile(
             user_id=new_user.id,
             address=profile.address,
@@ -75,6 +71,8 @@ async def create_user(user: user_model.User, profile: profile_model.Profile, db)
         await db.commit()
         await db.refresh(new_profile)
 
+    # Create session for adding contacts
+    async with db.begin():
         default_contacts = [
             contacts_model.ContactModel(
                 user_id=new_user.id,
@@ -92,35 +90,27 @@ async def create_user(user: user_model.User, profile: profile_model.Profile, db)
                 name="Firefighter",
             )
         ]
-
-        # Add the default contacts to the DB
         db.add_all(default_contacts)
         await db.commit()
 
-        return {
-            "user": user_model.User(
-                username=new_user.username,
-                email=new_user.email,
-                password="*****",  # Don't return the password for security
-            ),
-            "profile": profile_model.Profile(
-                address=new_profile.address,
-                first_name=new_profile.first_name,
-                last_name=new_profile.last_name,
-                is_admin=new_profile.is_admin,
-                is_girl=new_profile.is_girl,
-                is_verified=new_profile.is_verified,
-            ),
-            "contacts": [
-                contacts_model.ContactModel(
-                    phone_number=contact.phone_number,
-                    name=contact.name,
-                ) for contact in default_contacts
-            ],
-        }
-
-    except IntegrityError:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An error occurred while creating the user"
-        )
+    return {
+        "user": user_model.User(
+            username=new_user.username,
+            email=new_user.email,
+            password="*****",
+        ),
+        "profile": profile_model.Profile(
+            address=new_profile.address,
+            first_name=new_profile.first_name,
+            last_name=new_profile.last_name,
+            is_admin=new_profile.is_admin,
+            is_girl=new_profile.is_girl,
+            is_verified=new_profile.is_verified,
+        ),
+        "contacts": [
+            contacts_model.ContactModel(
+                phone_number=contact.phone_number,
+                name=contact.name,
+            ) for contact in default_contacts
+        ],
+    }

@@ -13,6 +13,7 @@ from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 
 router = APIRouter()
+
 @router.get("/users/")
 async def get_users(db: db_dependency):
     users = await get_all_users(db)
@@ -51,12 +52,12 @@ async def create_usert(user: UserModel, profile: ProfileModel, db: db_dependency
 
 @router.post("/login/", response_model=LoginResponse)
 async def login(user: LoginRequest, db: db_dependency):
-    user_in_db = await login_user(db,user.email,user.password)
+    user_in_db = await login_user(db, user.email, user.password)
     user_obj = await get_user_by_email(db, user.email)
     if not user_in_db:
         raise HTTPException(status_code=401, detail="Invalid email or password")
     
-    user_profile = await get_profile_by_user_id(db,user_obj.id)
+    user_profile = await get_profile_by_user_id(db, user_obj.id)
 
     return JSONResponse(
         status_code=status.HTTP_200_OK,

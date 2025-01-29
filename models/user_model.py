@@ -1,7 +1,7 @@
-from sqlalchemy import Column, Integer, String, Boolean, Float, ForeignKey, Text, DateTime, Time
+from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
-from datetime import datetime
 from database.base import Base
+from .association_tables import group_members  # Import the group_members table
 
 class User(Base):
     __tablename__ = 'users'
@@ -13,13 +13,11 @@ class User(Base):
     notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
     contacts = relationship("ContactModel", back_populates="user", cascade="all, delete-orphan")
     sos_alerts = relationship("SOSAlerter", back_populates="user", cascade="all, delete-orphan")
-    circle = relationship("Circle", back_populates="user", uselist=False, cascade="all, delete-orphan")
     profile = relationship("Profile", back_populates="user", uselist=False, cascade="all, delete-orphan")
     incident_reports = relationship("IncidentReport", back_populates="user", cascade="all, delete-orphan")
 
-    def as_dict(self):
-        return {
-            "id": self.id,
-            "username": self.username,
-            "email": self.email,
-        }
+    circles = relationship(
+        "Circle", 
+        secondary=group_members, 
+        back_populates="members"
+    )
