@@ -6,7 +6,6 @@ from controllers.admin_incident_report_controller import router as admin_inciden
 from controllers.danger_zone_controller import router as danger_zone_router
 from controllers.contacts_controller import router as contacts_router
 from controllers.circle_controller import router as circle_router
-from mangum import Mangum  # ASGI adapter for Vercel
 
 app = FastAPI()
 app.add_event_handler("startup", create_tables)
@@ -22,4 +21,3 @@ app.include_router(circle_router, prefix="/circle", tags=["Circle"])
 async def root():
     return {"message": "Welcome to the SafeZone API"}
 
-handler = Mangum(app)  # Wrap the app with Mangum
