@@ -7,11 +7,15 @@ from schemas.profile_schema import ProfileModel
 from schemas.contacts_schema import ContactSchema
 from sqlalchemy.exc import IntegrityError
 from typing import List, Optional
+from fastapi.concurrency import run_in_threadpool
 
-def get_password_hash(password: str) -> str:
+async def get_password_hash(password: str) -> str:
     salt = bcrypt.gensalt()
-    hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
+    hashed_password = await run_in_threadpool(bcrypt.hashpw, password.encode('utf-8'), salt)
     return hashed_password.decode('utf-8')
+
+async def verify_password(plain_password, hashed_password) -> bool:
+    return await run_in_threadpool(bcrypt.checkpw, plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
 
 async def get_user_by_email(db, email):
     result = await db.execute(select(user_model.User).filter(user_model.User.email == email))
