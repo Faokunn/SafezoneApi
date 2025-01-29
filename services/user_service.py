@@ -40,18 +40,9 @@ async def login_user(db, email, password):
     )
 
 async def create_user(user: user_model.User, profile: profile_model.Profile, db):
-    # Check if the user already exists by email
-    existing_user = await get_user_by_email(db, user.email)
-    if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
-        )
-
-    try:
+    # Create session for the user creation
+    async with db.begin():
         hashed_password = get_password_hash(user.password)
-
-        # Create the new user
         new_user = user_model.User(
             username=user.username,
             email=user.email,
@@ -61,6 +52,8 @@ async def create_user(user: user_model.User, profile: profile_model.Profile, db)
         await db.commit()
         await db.refresh(new_user)
 
+    # Create session for the profile creation
+    async with db.begin():
         new_profile = profile_model.Profile(
             user_id=new_user.id,
             address=profile.address,
@@ -74,6 +67,8 @@ async def create_user(user: user_model.User, profile: profile_model.Profile, db)
         await db.commit()
         await db.refresh(new_profile)
 
+    # Create session for adding contacts
+    async with db.begin():
         default_contacts = [
             contacts_model.ContactModel(
                 user_id=new_user.id,
@@ -91,35 +86,27 @@ async def create_user(user: user_model.User, profile: profile_model.Profile, db)
                 name="Firefighter",
             )
         ]
-
-        # Add the default contacts to the DB
         db.add_all(default_contacts)
         await db.commit()
 
-        return {
-            "user": user_model.User(
-                username=new_user.username,
-                email=new_user.email,
-                password="*****",  # Don't return the password for security
-            ),
-            "profile": profile_model.Profile(
-                address=new_profile.address,
-                first_name=new_profile.first_name,
-                last_name=new_profile.last_name,
-                is_admin=new_profile.is_admin,
-                is_girl=new_profile.is_girl,
-                is_verified=new_profile.is_verified,
-            ),
-            "contacts": [
-                contacts_model.ContactModel(
-                    phone_number=contact.phone_number,
-                    name=contact.name,
-                ) for contact in default_contacts
-            ],
-        }
-
-    except IntegrityError:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An error occurred while creating the user"
-        )
+    return {
+        "user": user_model.User(
+            username=new_user.username,
+            email=new_user.email,
+            password="*****",
+        ),
+        "profile": profile_model.Profile(
+            address=new_profile.address,
+            first_name=new_profile.first_name,
+            last_name=new_profile.last_name,
+            is_admin=new_profile.is_admin,
+            is_girl=new_profile.is_girl,
+            is_verified=new_profile.is_verified,
+        ),
+        "contacts": [
+            contacts_model.ContactModel(
+                phone_number=contact.phone_number,
+                name=contact.name,
+            ) for contact in default_contacts
+        ],
+    }
