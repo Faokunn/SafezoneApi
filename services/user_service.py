@@ -8,6 +8,8 @@ from schemas.contacts_schema import ContactSchema
 from sqlalchemy.exc import IntegrityError
 from typing import List, Optional
 from fastapi.concurrency import run_in_threadpool
+from fastapi import HTTPException
+import logging
 
 async def get_password_hash(password: str) -> str:
     salt = bcrypt.gensalt()
@@ -22,8 +24,12 @@ async def get_user_by_email(db, email):
     return result.scalars().first()
 
 async def get_all_users(db):
-    result = await db.execute(select(user_model.User))
-    return result.scalars().all()
+    try:
+        result = await db.execute(select(user_model.User))
+        return result.scalars().all()
+    except Exception as e:
+        logging.error(f"Error fetching users: {e}")
+        raise HTTPException(status_code=500, detail="Error fetching users")
 
 async def login_user(db, email, password):
     user = await get_user_by_email(db, email)
